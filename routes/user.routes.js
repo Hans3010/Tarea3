@@ -4,13 +4,11 @@ const {
   findUsers,
   findUser,
   updateUser,
-  createUser,
   deleteUser,
+  updatePassword,
 } = require('../controllers/user.controller');
-const {
-  validIfExistsUser,
-  validIfExistsUserEmail,
-} = require('../middlewares/user.middleware');
+const { protect } = require('../middlewares/auth.middleware');
+const { validIfExistsUser } = require('../middlewares/user.middleware');
 const { validateFields } = require('../middlewares/validateField.middleware');
 
 const router = Router();
@@ -18,24 +16,7 @@ const router = Router();
 router.get('/', findUsers);
 
 router.get('/:id', validIfExistsUser, findUser);
-
-router.post(
-  '/',
-  [
-    check('name', 'The username is required').not().isEmpty(),
-    check('email', 'The email is required').not().isEmpty(),
-    check('email', 'The email must be a correct format').isEmail(),
-    check('password', 'The password is required').not().isEmpty(),
-    check('password', 'The password needs at least 8 characters').isLength({
-      min: 8,
-      max: 32,
-    }),
-    validateFields,
-    validIfExistsUserEmail,
-  ],
-  createUser
-);
-
+router.use(protect);
 router.patch(
   '/:id',
   [
@@ -47,8 +28,19 @@ router.patch(
   ],
   updateUser
 );
+router.patch(
+  '/password/:id',
+  [
+    check('currentPassword', 'The current password is required')
+      .not()
+      .isEmpty(),
+    check('newPassword', 'The new password is required').not().isEmpty(),
+    validateFields,
+    validIfExistsUser,
+  ],
+  updatePassword
+);
 
-// Siempre enviar en dos puntos :
 router.delete('/:id', validIfExistsUser, deleteUser);
 
 module.exports = {

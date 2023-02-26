@@ -1,7 +1,8 @@
 const User = require('../models/user.model');
 const catchAsync = require('../utils/catchAsync');
+const bcrypt = require('bcryptjs');
+const AppError = require('../utils/app.Error');
 
-// /api/v1/users/
 exports.findUsers = catchAsync(async (req, res) => {
   const users = await User.findAll({
     where: {
@@ -20,20 +21,6 @@ exports.findUser = catchAsync(async (req, res) => {
     status: 'success',
     message: 'The user was found successfully',
     user,
-  });
-});
-exports.createUser = catchAsync(async (req, res) => {
-  const { name, email, password } = req.body;
-
-  const newUser = await User.create({
-    name: name.toLowerCase(),
-    email: email.toLowerCase(),
-    password,
-  });
-  res.status(201).json({
-    status: 'success',
-    message: 'The user was created sucessfully',
-    newUser,
   });
 });
 
@@ -57,5 +44,25 @@ exports.deleteUser = catchAsync(async (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'The user was deleted successfully',
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res) => {
+  const { user } = req;
+  const { currentPassword, newPassword } = req.body;
+  if (!(await bcrypt.compare(currentPassword, user.password))) {
+    return next(new AppError('Incorrect password', 401));
+  }
+  const salt = await bcrypt.genSalt(10);
+  const encriptedPassword = await bcrypt.hash(newPassword, salt);
+
+  await user.update({
+    password: encriptedPassword,
+    passwordChangedAt: new Date(),
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'The password was updated successfully',
   });
 });

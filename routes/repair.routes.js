@@ -6,15 +6,15 @@ const {
   updateRepair,
   deleteRepair,
 } = require('../controllers/repair.controller');
+const { protect } = require('../middlewares/auth.middleware');
 const { validIfExistsRepair } = require('../middlewares/repair.middleware');
 
 const router = Router();
-
+router.post('/', createRepair);
+router.use(protect);
 router.get('/', findRepairs);
 
 router.get('/:id', validIfExistsRepair, findRepair);
-
-router.post('/', createRepair);
 
 router.patch('/:id', validIfExistsRepair, updateRepair);
 
